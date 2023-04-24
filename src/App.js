@@ -1,9 +1,9 @@
 import "./App.css";
 import { useState, useEffect } from "react";
-import { ethers, formatUnits, Contract } from "ethers";
+import { ethers, formatUnits, Contract, parseUnits } from "ethers";
 import abi from "./erc20.abi.json";
 
-const WEENUS = "0xaFF4481D10270F50f203E0763e2597776068CBc5";
+const USDC = "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C";
 
 const getAccount = () =>
   window.ethereum.request({ method: "eth_accounts" }).catch((err) => {
@@ -47,7 +47,7 @@ function App() {
 function Details({ provider, signer }) {
   const [balance, setBalance] = useState(-1);
   const [contract, setContract] = useState();
-  const [weenusBalance, setWeenusBalance] = useState(-1);
+  const [usdc, setUsdc] = useState(-1);
   const [block, setBlock] = useState(1);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ function Details({ provider, signer }) {
 
   useEffect(() => {
     if (provider && signer) {
-      setContract(new Contract(WEENUS, abi, provider));
+      setContract(new Contract(USDC, abi, signer));
     }
   }, [provider, signer]);
 
@@ -68,7 +68,7 @@ function Details({ provider, signer }) {
         contract.balanceOf(signer.address),
         contract.decimals(),
       ]).then(([balance, decimals]) =>
-        setWeenusBalance(formatUnits(balance, decimals))
+      setUsdc(formatUnits(balance, decimals))
       );
     }
   }, [contract, signer?.address, block]);
@@ -80,13 +80,20 @@ function Details({ provider, signer }) {
     };
   }, [provider]);
 
-  console.log(block)
+  const send = async () => {
+    const MY_OTHER_ACCOUNT = '0x14Ec154AD6D8c87cBd699fb8AB68c3a2F0BB6BA1'
+
+    const tx = await contract.transfer(MY_OTHER_ACCOUNT, parseUnits('1', 6))
+    const result = await tx.wait()
+    console.log('done', result)
+  }
 
   return (
     <div>
       <div>account: {signer.address}</div>
       {balance !== -1 ? <div>ETH balance: {formatUnits(balance)}</div> : null}
-      {weenusBalance !== -1 ? <div>WEENUS Balance: {weenusBalance}</div> : null}
+      {usdc !== -1 ? <div>USDC Balance: {usdc}</div> : null}
+      <button onClick={send}>send 1 USDC</button>
     </div>
   );
 }
