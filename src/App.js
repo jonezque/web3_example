@@ -48,22 +48,39 @@ function Details({ provider, signer }) {
   const [balance, setBalance] = useState(-1);
   const [contract, setContract] = useState();
   const [weenusBalance, setWeenusBalance] = useState(-1);
+  const [block, setBlock] = useState(1);
 
   useEffect(() => {
     if (provider && signer) {
       provider.getBalance(signer.address).then(setBalance);
+    }
+  }, [provider, signer, block]);
 
+  useEffect(() => {
+    if (provider && signer) {
       setContract(new Contract(WEENUS, abi, provider));
     }
   }, [provider, signer]);
 
   useEffect(() => {
     if (contract) {
-      Promise.all([contract.balanceOf(signer.address), contract.decimals()]).then(
-        ([balance, decimals]) => setWeenusBalance(formatUnits(balance, decimals))
+      Promise.all([
+        contract.balanceOf(signer.address),
+        contract.decimals(),
+      ]).then(([balance, decimals]) =>
+        setWeenusBalance(formatUnits(balance, decimals))
       );
     }
-  }, [contract, signer?.address]);
+  }, [contract, signer?.address, block]);
+
+  useEffect(() => {
+    provider.on("block", setBlock);
+    return () => {
+      provider.off("block", setBlock);
+    };
+  }, [provider]);
+
+  console.log(block)
 
   return (
     <div>
