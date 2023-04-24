@@ -1,5 +1,6 @@
 import "./App.css";
 import { useState, useEffect } from "react";
+import { ethers, formatUnits } from "ethers";
 
 const getAccount = () =>
   window.ethereum.request({ method: "eth_accounts" }).catch((err) => {
@@ -16,37 +17,43 @@ const connect = async () =>
   });
 
 function App() {
-  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
 
   useEffect(() => {
     getAccount().then((accs) => {
       if (accs.length) {
-        setAccount(accs[0]);
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        setProvider(provider);
+        provider.getSigner().then((signer) => setSigner(signer));
       }
     });
   }, []);
 
-  useEffect(() => {
-    const onAccountChanged = (accs) => {
-      if (accs.length) {
-        setAccount(accs[0]);
-      } else {
-        setAccount(null)
-      }
-    };
-    window.ethereum.on("accountsChanged", onAccountChanged);
-    return () => {
-      window.ethereum.off("accountsChanged", onAccountChanged);
-    };
-  }, []);
-
   return (
     <div className="App">
-      {account ? (
-        <div>{account}</div>
+      {provider && signer ? (
+        <Details provider={provider} signer={signer} />
       ) : (
         <button onClick={connect}>connect</button>
       )}
+    </div>
+  );
+}
+
+function Details({ provider, signer }) {
+  const [balance, setBalance] = useState(-1);
+
+  useEffect(() => {
+    if (provider && signer) {
+      provider.getBalance(signer.address).then(setBalance);
+    }
+  }, [provider, signer]);
+
+  return (
+    <div>
+      <div>account: {signer.address}</div>
+      {balance !== -1 ? <div>balance: {formatUnits(balance)}</div> : null}
     </div>
   );
 }
