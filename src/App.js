@@ -1,10 +1,9 @@
 import "./App.css";
 import { useState, useEffect } from "react";
 import { ethers, formatUnits, Contract } from "ethers";
-import abi from './erc20.abi.json'
+import abi from "./erc20.abi.json";
 
-const WEENUS = '0xaFF4481D10270F50f203E0763e2597776068CBc5'
-
+const WEENUS = "0xaFF4481D10270F50f203E0763e2597776068CBc5";
 
 const getAccount = () =>
   window.ethereum.request({ method: "eth_accounts" }).catch((err) => {
@@ -48,27 +47,29 @@ function App() {
 function Details({ provider, signer }) {
   const [balance, setBalance] = useState(-1);
   const [contract, setContract] = useState();
-  const [weenusBalance, setWeenusBalance] = useState(-1)
+  const [weenusBalance, setWeenusBalance] = useState(-1);
 
   useEffect(() => {
     if (provider && signer) {
       provider.getBalance(signer.address).then(setBalance);
 
-      setContract(new Contract(WEENUS, abi, provider))
+      setContract(new Contract(WEENUS, abi, provider));
     }
   }, [provider, signer]);
 
   useEffect(() => {
     if (contract) {
-      contract.balanceOf(signer.address).then(setWeenusBalance)
+      Promise.all([contract.balanceOf(signer.address), contract.decimals()]).then(
+        ([balance, decimals]) => setWeenusBalance(formatUnits(balance, decimals))
+      );
     }
-  }, [contract, signer?.address])
+  }, [contract, signer?.address]);
 
   return (
     <div>
       <div>account: {signer.address}</div>
       {balance !== -1 ? <div>ETH balance: {formatUnits(balance)}</div> : null}
-      {weenusBalance !== -1 ? <div>WEENUS Balance: {formatUnits(weenusBalance)}</div> : null}
+      {weenusBalance !== -1 ? <div>WEENUS Balance: {weenusBalance}</div> : null}
     </div>
   );
 }
